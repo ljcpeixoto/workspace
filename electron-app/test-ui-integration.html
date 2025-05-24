@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { margin: 5px; padding: 10px; }
+        #log { background: #f5f5f5; padding: 10px; height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>JPA Entity Viewer - UI Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>File Selection Test</h2>
+        <button id="test-add-files">Test Add Files</button>
+        <button id="test-add-directory">Test Add Directory</button>
+        <button id="test-menu-files">Test Menu Add Files</button>
+        <button id="test-menu-directory">Test Menu Add Directory</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Log</h2>
+        <div id="log"></div>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <script>
+        // Mock electronAPI for testing
+        window.electronAPI = {
+            selectFiles: async () => {
+                log('📁 selectFiles() called', 'info');
+                // Simulate file selection
+                return [
+                    '/workspace/examples/java/com/example/entities/User.java',
+                    '/workspace/examples/java/com/example/entities/Order.java'
+                ];
+            },
+            
+            selectDirectory: async () => {
+                log('📂 selectDirectory() called', 'info');
+                // Simulate directory selection
+                return '/workspace/examples/java/com/example/entities';
+            },
+            
+            analyzeEntities: async (filePaths) => {
+                log(`🔍 analyzeEntities() called with ${filePaths.length} files`, 'info');
+                // Simulate analysis
+                return {
+                    entities: [],
+                    metadata: { totalEntities: 0, totalRelationships: 0 }
+                };
+            },
+            
+            onMenuAddFiles: (callback) => {
+                log('✓ Menu listener registered: onMenuAddFiles', 'success');
+                window._menuAddFilesCallback = callback;
+            },
+            
+            onMenuAddDirectory: (callback) => {
+                log('✓ Menu listener registered: onMenuAddDirectory', 'success');
+                window._menuAddDirectoryCallback = callback;
+            },
+            
+            onMenuExportAnalysis: (callback) => {
+                log('✓ Menu listener registered: onMenuExportAnalysis', 'success');
+                window._menuExportAnalysisCallback = callback;
+            },
+            
+            onMenuRefreshAnalysis: (callback) => {
+                log('✓ Menu listener registered: onMenuRefreshAnalysis', 'success');
+                window._menuRefreshAnalysisCallback = callback;
+            },
+            
+            onMenuClearFiles: (callback) => {
+                log('✓ Menu listener registered: onMenuClearFiles', 'success');
+                window._menuClearFilesCallback = callback;
+            }
+        };
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // Simplified renderer class for testing
+        class TestRenderer {
+            constructor() {
+                this.selectedFiles = new Set();
+                this.setupEventListeners();
+                this.setupMenuListeners();
+                log('🚀 TestRenderer initialized', 'success');
+            }
+
+            setupEventListeners() {
+                document.getElementById('test-add-files').addEventListener('click', () => {
+                    log('🖱️ Add Files button clicked', 'info');
+                    this.handleAddFiles();
+                });
+                
+                document.getElementById('test-add-directory').addEventListener('click', () => {
+                    log('🖱️ Add Directory button clicked', 'info');
+                    this.handleAddDirectory();
+                });
+                
+                document.getElementById('test-menu-files').addEventListener('click', () => {
+                    log('🖱️ Simulating menu Add Files click', 'info');
+                    if (window._menuAddFilesCallback) {
+                        window._menuAddFilesCallback();
+                    } else {
+                        log('❌ Menu callback not registered', 'error');
+                    }
+                });
+                
+                document.getElementById('test-menu-directory').addEventListener('click', () => {
+                    log('🖱️ Simulating menu Add Directory click', 'info');
+                    if (window._menuAddDirectoryCallback) {
+                        window._menuAddDirectoryCallback();
+                    } else {
+                        log('❌ Menu callback not registered', 'error');
+                    }
+                });
+                
+                log('✓ Event listeners set up', 'success');
+            }
+
+            setupMenuListeners() {
+                window.electronAPI.onMenuAddFiles(() => this.handleAddFiles());
+                window.electronAPI.onMenuAddDirectory(() => this.handleAddDirectory());
+                window.electronAPI.onMenuExportAnalysis(() => this.handleExportAnalysis());
+                window.electronAPI.onMenuRefreshAnalysis(() => this.handleRefreshAnalysis());
+                window.electronAPI.onMenuClearFiles(() => this.handleClearFiles());
+                log('✓ Menu listeners set up', 'success');
+            }
+
+            async handleAddFiles() {
+                log('🔄 handleAddFiles() started', 'info');
+                try {
+                    const files = await window.electronAPI.selectFiles();
+                    log(`📁 Selected ${files.length} files`, 'success');
+                    if (files.length > 0) {
+                        files.forEach(file => {
+                            this.selectedFiles.add(file);
+                            log(`   + ${file}`, 'info');
+                        });
+                        log(`✅ Total files selected: ${this.selectedFiles.size}`, 'success');
+                        await this.performAnalysis();
+                    }
+                } catch (error) {
+                    log(`❌ Failed to add files: ${error.message}`, 'error');
+                }
+            }
+
+            async handleAddDirectory() {
+                log('🔄 handleAddDirectory() started', 'info');
+                try {
+                    const directory = await window.electronAPI.selectDirectory();
+                    log(`📂 Selected directory: ${directory}`, 'success');
+                    if (directory) {
+                        this.selectedFiles.add(directory);
+                        log(`✅ Total items selected: ${this.selectedFiles.size}`, 'success');
+                        await this.performAnalysis();
+                    }
+                } catch (error) {
+                    log(`❌ Failed to add directory: ${error.message}`, 'error');
+                }
+            }
+
+            async performAnalysis() {
+                log('🔍 Starting analysis...', 'info');
+                try {
+                    const filePaths = Array.from(this.selectedFiles);
+                    const result = await window.electronAPI.analyzeEntities(filePaths);
+                    log(`✅ Analysis completed: ${result.metadata.totalEntities} entities found`, 'success');
+                } catch (error) {
+                    log(`❌ Analysis failed: ${error.message}`, 'error');
+                }
+            }
+
+            handleExportAnalysis() {
+                log('💾 Export analysis requested', 'info');
+            }
+
+            handleRefreshAnalysis() {
+                log('🔄 Refresh analysis requested', 'info');
+                this.performAnalysis();
+            }
+
+            handleClearFiles() {
+                log('🗑️ Clear files requested', 'info');
+                this.selectedFiles.clear();
+                log('✅ Files cleared', 'success');
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            log('📄 DOM loaded, initializing test renderer...', 'info');
+            new TestRenderer();
+        });
+    </script>
+</body>
+</html>

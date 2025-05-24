@@ -13,19 +13,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Menu event listeners
   onMenuAddFiles: (callback: () => void) => {
-    ipcRenderer.on('menu-add-files', callback);
+    ipcRenderer.on('menu-add-files', (_event) => callback());
   },
   onMenuAddDirectory: (callback: () => void) => {
-    ipcRenderer.on('menu-add-directory', callback);
+    ipcRenderer.on('menu-add-directory', (_event) => callback());
   },
   onMenuExportAnalysis: (callback: () => void) => {
-    ipcRenderer.on('menu-export-analysis', callback);
+    ipcRenderer.on('menu-export-analysis', (_event) => callback());
   },
   onMenuRefreshAnalysis: (callback: () => void) => {
-    ipcRenderer.on('menu-refresh-analysis', callback);
+    ipcRenderer.on('menu-refresh-analysis', (_event) => callback());
   },
   onMenuClearFiles: (callback: () => void) => {
-    ipcRenderer.on('menu-clear-files', callback);
+    ipcRenderer.on('menu-clear-files', (_event) => callback());
   },
   
   // Utility
