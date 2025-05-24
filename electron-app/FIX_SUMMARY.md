@@ -1,7 +1,9 @@
 # File Selection Fix Summary
 
 ## Problem
-The "Add Java files..." menu option and "Add Files" button were not working when clicked - they appeared to do nothing.
+The "Add Java files..." menu option and "Add Files" button were not working when clicked - they appeared to do nothing. Additionally, the browser console showed:
+- `Uncaught ReferenceError: exports is not defined` 
+- Electron Security Warning about Content-Security-Policy
 
 ## Root Cause
 The issue was in the `preload.ts` file where the IPC event listeners were not properly handling the `event` parameter that Electron's `ipcRenderer.on()` method passes to callback functions.
@@ -36,7 +38,7 @@ onMenuAddFiles: (callback: () => void) => {
 ## Files Modified
 - `src/preload.ts` - Fixed all menu event listener registrations
 - `dist/preload.js` - Compiled output (automatically updated)
-- `assets/renderer.js` - Copied updated compiled renderer
+- `assets/renderer.js` - Rewritten as plain JavaScript to fix CommonJS module issues
 
 ## Testing
 Created comprehensive tests to verify the fix:

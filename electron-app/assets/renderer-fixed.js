@@ -1,5 +1,5 @@
-// JPA Entity Viewer Renderer
-// Plain JavaScript version for browser compatibility
+// JPA Entity Viewer Renderer - Browser-compatible version
+// No CommonJS exports, pure browser JavaScript
 
 class JpaEntityViewerRenderer {
     constructor() {
@@ -54,31 +54,34 @@ class JpaEntityViewerRenderer {
 
     setupMenuListeners() {
         // Menu event listeners
-        if (window.electronAPI) {
-            window.electronAPI.onMenuAddFiles(() => this.handleAddFiles());
-            window.electronAPI.onMenuAddDirectory(() => this.handleAddDirectory());
-            window.electronAPI.onMenuExportAnalysis(() => this.handleExportAnalysis());
-            window.electronAPI.onMenuRefreshAnalysis(() => this.handleRefreshAnalysis());
-            window.electronAPI.onMenuClearFiles(() => this.handleClearFiles());
-        }
+        window.electronAPI.onMenuAddFiles(() => this.handleAddFiles());
+        window.electronAPI.onMenuAddDirectory(() => this.handleAddDirectory());
+        window.electronAPI.onMenuExportAnalysis(() => this.handleExportAnalysis());
+        window.electronAPI.onMenuRefreshAnalysis(() => this.handleRefreshAnalysis());
+        window.electronAPI.onMenuClearFiles(() => this.handleClearFiles());
     }
 
     async handleAddFiles() {
         try {
+            console.log('🔄 handleAddFiles() called');
             const files = await window.electronAPI.selectFiles();
+            console.log('📁 Selected files:', files);
             if (files.length > 0) {
-                files.forEach(file => this.selectedFiles.add(file));
+                files.forEach((file) => this.selectedFiles.add(file));
                 this.updateUI();
                 await this.performAnalysis();
             }
         } catch (error) {
+            console.error('❌ Failed to add files:', error);
             this.showError(`Failed to add files: ${error.message}`);
         }
     }
 
     async handleAddDirectory() {
         try {
+            console.log('🔄 handleAddDirectory() called');
             const directory = await window.electronAPI.selectDirectory();
+            console.log('📂 Selected directory:', directory);
             if (directory) {
                 // For now, we'll let the backend handle directory scanning
                 // In a more sophisticated implementation, we could scan the directory here
@@ -87,6 +90,7 @@ class JpaEntityViewerRenderer {
                 await this.performAnalysis();
             }
         } catch (error) {
+            console.error('❌ Failed to add directory:', error);
             this.showError(`Failed to add directory: ${error.message}`);
         }
     }
@@ -110,14 +114,8 @@ class JpaEntityViewerRenderer {
         }
 
         try {
-            const data = JSON.stringify(this.currentAnalysis, null, 2);
-            const result = await window.electronAPI.exportAnalysis(data);
-            
-            if (result.success) {
-                this.showSuccess(`Analysis exported to: ${result.filePath}`);
-            } else {
-                this.showError(`Export failed: ${result.error}`);
-            }
+            const jsonData = JSON.stringify(this.currentAnalysis, null, 2);
+            await window.electronAPI.exportAnalysis(jsonData);
         } catch (error) {
             this.showError(`Failed to export analysis: ${error.message}`);
         }
@@ -129,18 +127,20 @@ class JpaEntityViewerRenderer {
         }
 
         this.isAnalyzing = true;
-        this.showLoadingState();
+        this.showLoading();
 
         try {
             const filePaths = Array.from(this.selectedFiles);
+            console.log('🔍 Starting analysis for:', filePaths);
+            
             const result = await window.electronAPI.analyzeEntities(filePaths);
+            console.log('✅ Analysis completed:', result);
             
             this.currentAnalysis = result;
-            this.showAnalysisContent();
-            this.updateJsonDisplay();
+            this.showAnalysisResults();
             this.updateLastAnalysisTime();
-            
         } catch (error) {
+            console.error('❌ Analysis failed:', error);
             this.showError(`Analysis failed: ${error.message}`);
         } finally {
             this.isAnalyzing = false;
@@ -151,7 +151,13 @@ class JpaEntityViewerRenderer {
         this.updateFileList();
         this.updateCounts();
         this.updateButtons();
-        this.updateViewState();
+        this.updateStatus();
+
+        if (this.selectedFiles.size === 0) {
+            this.showEmptyState();
+        } else if (this.currentAnalysis) {
+            this.showAnalysisResults();
+        }
     }
 
     updateFileList() {
@@ -164,32 +170,35 @@ class JpaEntityViewerRenderer {
                     <p class="hint">Use "Add Files" or "Add Directory" to get started</p>
                 </div>
             `;
-        } else {
-            const filesArray = Array.from(this.selectedFiles);
-            fileList.innerHTML = filesArray.map(file => `
-                <div class="file-item">
-                    <span class="file-path" title="${file}">${this.getFileName(file)}</span>
-                    <button class="remove-file-btn" onclick="renderer.removeFile('${file}')" title="Remove file">×</button>
-                </div>
-            `).join('');
+            return;
         }
+
+        const filesArray = Array.from(this.selectedFiles);
+        fileList.innerHTML = filesArray.map(file => {
+            const fileName = file.split('/').pop() || file;
+            const isDirectory = !file.endsWith('.java');
+            const icon = isDirectory ? '📁' : '📄';
+            
+            return `
+                <div class="file-item" title="${file}">
+                    <span class="file-icon">${icon}</span>
+                    <span class="file-name">${fileName}</span>
+                    <button class="remove-file-btn" onclick="renderer.removeFile('${file}')" title="Remove">×</button>
+                </div>
+            `;
+        }).join('');
     }
 
     removeFile(filePath) {
         this.selectedFiles.delete(filePath);
         this.updateUI();
         
-        // Re-analyze if we still have files
+        // Re-analyze if there are still files
         if (this.selectedFiles.size > 0) {
             this.performAnalysis();
         } else {
             this.currentAnalysis = null;
-            this.updateViewState();
         }
-    }
-
-    getFileName(filePath) {
-        return filePath.split(/[/\\]/).pop() || filePath;
     }
 
     updateCounts() {
@@ -214,68 +223,54 @@ class JpaEntityViewerRenderer {
         this.elements.retryBtn.disabled = !hasFiles || this.isAnalyzing;
     }
 
-    updateViewState() {
-        const hasFiles = this.selectedFiles.size > 0;
-        const hasAnalysis = this.currentAnalysis !== null;
-        
-        // Hide all states first
-        this.elements.loadingState.style.display = 'none';
-        this.elements.emptyState.style.display = 'none';
-        this.elements.analysisContent.style.display = 'none';
-        this.elements.errorState.style.display = 'none';
-        
+    updateStatus() {
         if (this.isAnalyzing) {
-            this.elements.loadingState.style.display = 'block';
-        } else if (!hasFiles) {
-            this.elements.emptyState.style.display = 'block';
-        } else if (hasAnalysis) {
-            this.elements.analysisContent.style.display = 'block';
+            this.elements.statusText.textContent = 'Analyzing...';
+        } else if (this.selectedFiles.size === 0) {
+            this.elements.statusText.textContent = 'No files selected';
+        } else if (this.currentAnalysis) {
+            this.elements.statusText.textContent = 'Analysis complete';
         } else {
-            this.elements.emptyState.style.display = 'block';
+            this.elements.statusText.textContent = 'Ready to analyze';
         }
     }
 
-    showLoadingState() {
-        this.elements.loadingState.style.display = 'block';
-        this.elements.emptyState.style.display = 'none';
+    updateLastAnalysisTime() {
+        const now = new Date();
+        this.elements.lastAnalysis.textContent = now.toLocaleTimeString();
+    }
+
+    showEmptyState() {
+        this.elements.emptyState.style.display = 'block';
+        this.elements.loadingState.style.display = 'none';
         this.elements.analysisContent.style.display = 'none';
         this.elements.errorState.style.display = 'none';
-        
-        this.elements.statusText.textContent = 'Analyzing entities...';
+    }
+
+    showLoading() {
+        this.elements.emptyState.style.display = 'none';
+        this.elements.loadingState.style.display = 'block';
+        this.elements.analysisContent.style.display = 'none';
+        this.elements.errorState.style.display = 'none';
         this.updateButtons();
     }
 
-    showAnalysisContent() {
-        this.elements.loadingState.style.display = 'none';
+    showAnalysisResults() {
         this.elements.emptyState.style.display = 'none';
+        this.elements.loadingState.style.display = 'none';
         this.elements.analysisContent.style.display = 'block';
         this.elements.errorState.style.display = 'none';
-        
-        this.elements.statusText.textContent = 'Analysis complete';
+        this.updateJsonDisplay();
         this.updateButtons();
     }
 
     showError(message) {
-        this.elements.loadingState.style.display = 'none';
         this.elements.emptyState.style.display = 'none';
+        this.elements.loadingState.style.display = 'none';
         this.elements.analysisContent.style.display = 'none';
         this.elements.errorState.style.display = 'block';
-        
         this.elements.errorMessage.textContent = message;
-        this.elements.statusText.textContent = 'Analysis failed';
         this.updateButtons();
-    }
-
-    showSuccess(message) {
-        // Show a temporary success message
-        const originalStatus = this.elements.statusText.textContent;
-        this.elements.statusText.textContent = message;
-        this.elements.statusText.style.color = '#28a745';
-        
-        setTimeout(() => {
-            this.elements.statusText.textContent = originalStatus;
-            this.elements.statusText.style.color = '';
-        }, 3000);
     }
 
     updateJsonDisplay() {
@@ -295,28 +290,23 @@ class JpaEntityViewerRenderer {
                 displayData = { relationships: this.currentAnalysis.relationships };
                 break;
             case 'raw':
+                this.elements.jsonOutput.textContent = JSON.stringify(this.currentAnalysis);
+                return;
+            default: // formatted
                 displayData = this.currentAnalysis;
-                break;
-            case 'formatted':
-            default:
-                displayData = this.currentAnalysis;
-                break;
         }
 
         this.elements.jsonOutput.textContent = JSON.stringify(displayData, null, 2);
-    }
-
-    updateLastAnalysisTime() {
-        const now = new Date();
-        this.elements.lastAnalysis.textContent = now.toLocaleString();
     }
 }
 
 // Initialize the renderer when the DOM is loaded
 let renderer;
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Initializing JPA Entity Viewer Renderer...');
     renderer = new JpaEntityViewerRenderer();
+    console.log('✅ Renderer initialized successfully');
 });
 
-// Make renderer available globally for debugging and file removal
+// Make renderer available globally for debugging
 window.renderer = renderer;

@@ -1,4 +1,33 @@
-import { AnalysisResult } from './types';
+// Types defined locally for renderer context
+interface AnalysisResult {
+    entities: any[];
+    relationships: any[];
+    metadata: {
+        totalEntities: number;
+        totalRelationships: number;
+        analysisDate: string;
+        [key: string]: any;
+    };
+}
+
+interface ElectronAPI {
+    selectFiles: () => Promise<string[]>;
+    selectDirectory: () => Promise<string | null>;
+    analyzeEntities: (filePaths: string[]) => Promise<AnalysisResult>;
+    exportAnalysis: (data: string) => Promise<{ success: boolean; filePath?: string; error?: string }>;
+    onMenuAddFiles: (callback: () => void) => void;
+    onMenuAddDirectory: (callback: () => void) => void;
+    onMenuExportAnalysis: (callback: () => void) => void;
+    onMenuRefreshAnalysis: (callback: () => void) => void;
+    onMenuClearFiles: (callback: () => void) => void;
+    removeAllListeners: (channel: string) => void;
+}
+
+declare global {
+    interface Window {
+        electronAPI: ElectronAPI;
+    }
+}
 
 class JpaEntityViewerRenderer {
     private selectedFiles: Set<string> = new Set();
