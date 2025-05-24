@@ -22,11 +22,12 @@ export interface ElectronAPI {
 // Analysis result interfaces
 export interface AnalysisResult {
   entities: any[];
+  relationships: any[];
   metadata: {
     totalEntities: number;
     totalRelationships: number;
-    sourceFiles: string[];
     analysisDate: string;
+    [key: string]: any;
   };
 }
 
