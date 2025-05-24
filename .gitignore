@@ -9,6 +9,10 @@ dist/
 build/
 *.tsbuildinfo
 
+electron-app/node_modules/
+electron-app/node_modules-analyzer/
+electron-app/dist/
+
 # Environment variables
 .env
 .env.local
