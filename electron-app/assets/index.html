@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JPA Entity Viewer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>JPA Entity Viewer</h1>
+            <div class="header-actions">
+                <button id="add-files-btn" class="btn btn-primary">
+                    <span class="icon">📁</span>
+                    Add Files
+                </button>
+                <button id="add-directory-btn" class="btn btn-secondary">
+                    <span class="icon">📂</span>
+                    Add Directory
+                </button>
+                <button id="refresh-btn" class="btn btn-secondary" disabled>
+                    <span class="icon">🔄</span>
+                    Refresh
+                </button>
+                <button id="clear-btn" class="btn btn-danger" disabled>
+                    <span class="icon">🗑️</span>
+                    Clear All
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Source Files</h3>
+                    <div id="file-list" class="file-list">
+                        <div class="empty-state">
+                            <p>No files selected</p>
+                            <p class="hint">Use "Add Files" or "Add Directory" to get started</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Analysis Summary</h3>
+                    <div id="analysis-summary" class="analysis-summary">
+                        <div class="summary-item">
+                            <span class="label">Entities:</span>
+                            <span id="entity-count" class="value">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Relationships:</span>
+                            <span id="relationship-count" class="value">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Files:</span>
+                            <span id="file-count" class="value">0</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <section class="content-area">
+                <div class="content-header">
+                    <h2>Analysis Results</h2>
+                    <div class="content-actions">
+                        <button id="export-btn" class="btn btn-secondary" disabled>
+                            <span class="icon">💾</span>
+                            Export JSON
+                        </button>
+                        <select id="view-mode" class="view-mode-select">
+                            <option value="formatted">Formatted JSON</option>
+                            <option value="raw">Raw JSON</option>
+                            <option value="entities">Entities Only</option>
+                            <option value="relationships">Relationships Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="content-body">
+                    <div id="loading-state" class="loading-state" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Analyzing entities...</p>
+                    </div>
+
+                    <div id="empty-state" class="empty-state-large">
+                        <div class="empty-icon">📊</div>
+                        <h3>No Analysis Results</h3>
+                        <p>Add Java files containing JPA entities to see the analysis results here.</p>
+                    </div>
+
+                    <div id="analysis-content" class="analysis-content" style="display: none;">
+                        <pre id="json-output" class="json-output"></pre>
+                    </div>
+
+                    <div id="error-state" class="error-state" style="display: none;">
+                        <div class="error-icon">⚠️</div>
+                        <h3>Analysis Error</h3>
+                        <p id="error-message">An error occurred during analysis.</p>
+                        <button id="retry-btn" class="btn btn-primary">Retry Analysis</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <span id="status-text">Ready</span>
+            </div>
+            <div class="status-right">
+                <span id="last-analysis">No analysis performed</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

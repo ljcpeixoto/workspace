@@ -1,0 +1,55 @@
+{
+  "name": "jpa-entity-viewer",
+  "version": "1.0.0",
+  "description": "Desktop application for analyzing and visualizing Java JPA entities",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && electron .",
+    "dev": "tsc && electron . --dev",
+    "pack": "electron-builder",
+    "dist": "electron-builder --publish=never",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "electron",
+    "jpa",
+    "entities",
+    "java",
+    "visualization",
+    "typescript"
+  ],
+  "author": "OpenHands",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  },
+  "build": {
+    "appId": "com.openhands.jpa-entity-viewer",
+    "productName": "JPA Entity Viewer",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
