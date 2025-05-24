@@ -1,0 +1,509 @@
+{
+  "entities": [
+    {
+      "className": "UserProfile",
+      "fullyQualifiedName": "com.UserProfile",
+      "packageName": "com",
+      "tableName": "user_profiles",
+      "fields": [
+        {
+          "name": "id",
+          "type": "Long",
+          "isId": true,
+          "isGenerated": true,
+          "columnName": "profile_id",
+          "nullable": true,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Id",
+            "GeneratedValue",
+            "Column"
+          ]
+        },
+        {
+          "name": "phoneNumber",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "phone_number",
+          "nullable": true,
+          "unique": false,
+          "length": 20,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "dateOfBirth",
+          "type": "LocalDate",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "date_of_birth",
+          "nullable": true,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "bio",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "bio",
+          "nullable": true,
+          "unique": false,
+          "length": 1000,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "avatarUrl",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "avatar_url",
+          "nullable": true,
+          "unique": false,
+          "length": 255,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "country",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "country",
+          "nullable": true,
+          "unique": false,
+          "length": 50,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "city",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "city",
+          "nullable": true,
+          "unique": false,
+          "length": 50,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "postalCode",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "postal_code",
+          "nullable": true,
+          "unique": false,
+          "length": 10,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "newsletterSubscribed",
+          "type": "Boolean",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "newsletter_subscribed",
+          "nullable": false,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        }
+      ],
+      "relationships": [
+        {
+          "fieldName": "user",
+          "type": "OneToOne",
+          "targetEntity": "User",
+          "fetchType": "LAZY",
+          "cascadeTypes": [],
+          "optional": true,
+          "joinColumn": "user_id",
+          "isOwningSide": true
+        }
+      ],
+      "annotations": [
+        "Entity",
+        "Table"
+      ],
+      "isAbstract": false,
+      "sourceFile": "/workspace/examples/java/com/example/entities/UserProfile.java"
+    },
+    {
+      "className": "User",
+      "fullyQualifiedName": "com.User",
+      "packageName": "com",
+      "tableName": "users",
+      "fields": [
+        {
+          "name": "id",
+          "type": "Long",
+          "isId": true,
+          "isGenerated": true,
+          "columnName": "user_id",
+          "nullable": true,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Id",
+            "GeneratedValue",
+            "Column"
+          ]
+        },
+        {
+          "name": "username",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "username",
+          "nullable": false,
+          "unique": true,
+          "length": 50,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "email",
+          "nullable": false,
+          "unique": true,
+          "length": 100,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "passwordHash",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "password_hash",
+          "nullable": false,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "firstName",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "first_name",
+          "nullable": true,
+          "unique": false,
+          "length": 50,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "lastName",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "last_name",
+          "nullable": true,
+          "unique": false,
+          "length": 50,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "createdAt",
+          "type": "LocalDateTime",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "created_at",
+          "nullable": false,
+          "unique": false,
+          "insertable": true,
+          "updatable": false,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "updatedAt",
+          "type": "LocalDateTime",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "updated_at",
+          "nullable": true,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "isActive",
+          "type": "Boolean",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "is_active",
+          "nullable": false,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        }
+      ],
+      "relationships": [
+        {
+          "fieldName": "orders",
+          "type": "OneToMany",
+          "targetEntity": "Order",
+          "fetchType": "LAZY",
+          "cascadeTypes": [
+            "ALL"
+          ],
+          "optional": true,
+          "mappedBy": "user",
+          "isOwningSide": false
+        },
+        {
+          "fieldName": "profile",
+          "type": "OneToOne",
+          "targetEntity": "UserProfile",
+          "fetchType": "LAZY",
+          "cascadeTypes": [
+            "ALL"
+          ],
+          "optional": true,
+          "mappedBy": "user",
+          "isOwningSide": false
+        },
+        {
+          "fieldName": "roles",
+          "type": "ManyToMany",
+          "targetEntity": "Role",
+          "fetchType": "LAZY",
+          "cascadeTypes": [],
+          "optional": true,
+          "joinTable": "user_roles",
+          "isOwningSide": true
+        }
+      ],
+      "annotations": [
+        "Entity",
+        "Table"
+      ],
+      "isAbstract": false,
+      "sourceFile": "/workspace/examples/java/com/example/entities/User.java",
+      "schemaName": "public"
+    },
+    {
+      "className": "Order",
+      "fullyQualifiedName": "com.Order",
+      "packageName": "com",
+      "tableName": "orders",
+      "fields": [
+        {
+          "name": "id",
+          "type": "Long",
+          "isId": true,
+          "isGenerated": true,
+          "columnName": "order_id",
+          "nullable": true,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Id",
+            "GeneratedValue",
+            "Column"
+          ]
+        },
+        {
+          "name": "orderNumber",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "order_number",
+          "nullable": false,
+          "unique": true,
+          "length": 20,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "totalAmount",
+          "type": "BigDecimal",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "total_amount",
+          "nullable": false,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "OrderStatus",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "status",
+          "nullable": false,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Enumerated",
+            "Column"
+          ]
+        },
+        {
+          "name": "orderDate",
+          "type": "LocalDateTime",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "order_date",
+          "nullable": false,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "shippedDate",
+          "type": "LocalDateTime",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "shipped_date",
+          "nullable": true,
+          "unique": false,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        },
+        {
+          "name": "deliveryAddress",
+          "type": "String",
+          "isId": false,
+          "isGenerated": false,
+          "columnName": "delivery_address",
+          "nullable": true,
+          "unique": false,
+          "length": 500,
+          "insertable": true,
+          "updatable": true,
+          "annotations": [
+            "Column"
+          ]
+        }
+      ],
+      "relationships": [
+        {
+          "fieldName": "user",
+          "type": "ManyToOne",
+          "targetEntity": "User",
+          "fetchType": "LAZY",
+          "cascadeTypes": [],
+          "optional": true,
+          "joinColumn": "user_id",
+          "isOwningSide": true
+        },
+        {
+          "fieldName": "orderItems",
+          "type": "OneToMany",
+          "targetEntity": "OrderItem",
+          "fetchType": "LAZY",
+          "cascadeTypes": [
+            "ALL"
+          ],
+          "optional": true,
+          "mappedBy": "order",
+          "isOwningSide": false
+        },
+        {
+          "fieldName": "paymentMethod",
+          "type": "ManyToOne",
+          "targetEntity": "PaymentMethod",
+          "fetchType": "LAZY",
+          "cascadeTypes": [],
+          "optional": true,
+          "joinColumn": "payment_method_id",
+          "isOwningSide": true
+        }
+      ],
+      "annotations": [
+        "Entity",
+        "Table"
+      ],
+      "isAbstract": false,
+      "sourceFile": "/workspace/examples/java/com/example/entities/Order.java"
+    }
+  ],
+  "metadata": {
+    "totalEntities": 3,
+    "totalRelationships": 7,
+    "timestamp": "2025-05-24T14:44:31.110Z",
+    "analyzerVersion": "1.0.0",
+    "sourceFiles": [
+      "/workspace/examples/java/com/example/entities/UserProfile.java",
+      "/workspace/examples/java/com/example/entities/User.java",
+      "/workspace/examples/java/com/example/entities/Order.java"
+    ]
+  }
+}

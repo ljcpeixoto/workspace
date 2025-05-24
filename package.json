@@ -1,0 +1,57 @@
+{
+  "name": "jpa-entity-analyzer",
+  "version": "1.0.0",
+  "description": "TypeScript utility for analyzing Java JPA Entity files and extracting entity information using ANTLR4",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "jpa-analyzer": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "ts-node src/cli.ts",
+    "clean": "rm -rf dist",
+    "prepare": "npm run build",
+    "analyze": "ts-node src/cli.ts analyze",
+    "validate": "ts-node src/cli.ts validate",
+    "info": "ts-node src/cli.ts info",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "jpa",
+    "entity",
+    "analyzer",
+    "java",
+    "typescript",
+    "antlr4",
+    "orm",
+    "hibernate",
+    "persistence"
+  ],
+  "author": "JPA Analyzer",
+  "license": "MIT",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "@types/commander": "^2.12.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/glob": "^8.1.0",
+    "@types/node": "^22.15.21",
+    "antlr4ts": "^0.5.0-alpha.4",
+    "antlr4ts-cli": "^0.5.0-alpha.4",
+    "commander": "^14.0.0",
+    "fs-extra": "^11.3.0",
+    "glob": "^11.0.2",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  }
+}
