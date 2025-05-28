@@ -275,23 +275,118 @@ export class JpaEntityVisitor extends AbstractParseTreeVisitor<any> implements J
 
   private parseAnnotationAttributes(attributeText: string): any {
     const attributes: any = {};
-    
-    // Very simplified attribute parsing
-    // In a real implementation, you'd need proper parsing of Java annotation syntax
-    if (attributeText.includes('=')) {
-      const pairs = attributeText.split(',');
-      for (const pair of pairs) {
-        const [key, value] = pair.split('=').map(s => s.trim());
-        if (key && value) {
-          attributes[key] = value.replace(/"/g, '');
+    if (!attributeText || attributeText.trim() === '') {
+      return attributes;
+    }
+
+    // If there's no '=', it's a single value for the "value" attribute
+    if (!attributeText.includes('=')) {
+      attributes.value = this.parseAttributeValue(attributeText.trim());
+      return attributes;
+    }
+
+    let currentIndex = 0;
+    while (currentIndex < attributeText.length) {
+      const equalsIndex = attributeText.indexOf('=', currentIndex);
+      if (equalsIndex === -1) break;
+
+      const key = attributeText.substring(currentIndex, equalsIndex).trim();
+      let valueString;
+
+      // Find the end of the value
+      // This needs to be smart about commas inside braces or nested annotations
+      let valueStartIndex = equalsIndex + 1;
+      // Skip leading whitespace for the value
+      while(valueStartIndex < attributeText.length && attributeText[valueStartIndex] === ' ') {
+        valueStartIndex++;
+      }
+
+      let openBraces = 0;    // For {...} arrays
+      let openParens = 0;    // For (...) of nested annotations
+      let inString = false;  // To ignore delimiters within strings
+
+      let valueEndIndex = valueStartIndex;
+      for (; valueEndIndex < attributeText.length; valueEndIndex++) {
+        const char = attributeText[valueEndIndex];
+
+        if (char === '"') {
+          // Basic string toggle, does not handle escaped quotes \".
+          // This is a simplification; proper string parsing is more complex.
+          if (valueEndIndex === 0 || attributeText[valueEndIndex-1] !== '\\') {
+            inString = !inString;
+          }
+        }
+
+        if (inString) continue; // Ignore delimiters within string literals
+
+        if (char === '{') openBraces++;
+        else if (char === '}') openBraces--;
+        else if (char === '(') openParens++;
+        else if (char === ')') openParens--;
+        else if (char === ',' && openBraces === 0 && openParens === 0) {
+          break; // Found comma separator for the next key-value pair
         }
       }
-    } else {
-      // Single value attribute
-      attributes.value = attributeText.replace(/"/g, '');
+      
+      valueString = attributeText.substring(valueStartIndex, valueEndIndex).trim();
+      attributes[key] = this.parseAttributeValue(valueString);
+      
+      currentIndex = valueEndIndex + 1;
+      // Skip potential comma and whitespace
+      while (currentIndex < attributeText.length && (attributeText[currentIndex] === ',' || attributeText[currentIndex] === ' ')) {
+        currentIndex++;
+      }
+    }
+    return attributes;
+  }
+
+  private parseAttributeValue(valueString: string): any {
+    valueString = valueString.trim();
+
+    // String literal
+    if (valueString.startsWith('"') && valueString.endsWith('"')) {
+      return valueString.substring(1, valueString.length - 1);
+    }
+
+    // Boolean literal
+    if (valueString === 'true') return true;
+    if (valueString === 'false') return false;
+
+    // Numeric literal
+    if (!isNaN(Number(valueString))) {
+      return Number(valueString);
+    }
+
+    // Array literal (e.g., {CascadeType.PERSIST, CascadeType.MERGE})
+    if (valueString.startsWith('{') && valueString.endsWith('}')) {
+      const arrayContent = valueString.substring(1, valueString.length - 1).trim();
+      if (arrayContent === '') return [];
+      // Split by comma, but be careful about nested structures (though less likely for simple enum arrays)
+      return arrayContent.split(',').map(item => this.parseAttributeValue(item.trim()));
+    }
+
+    // Nested annotation (e.g., @JoinColumn(name = "user_id"))
+    if (valueString.startsWith('@')) {
+      // This is a simplified parsing for nested annotations
+      // It reuses the extractAnnotationInfo logic, which is not ideal due to potential circular dependencies
+      // or context issues. A dedicated lightweight parser for nested annotations would be better.
+      const nameEndIndex = valueString.indexOf('(');
+      let name = valueString.substring(1);
+      let nestedAttributes = {};
+      if (nameEndIndex > 0) {
+        name = valueString.substring(1, nameEndIndex);
+        const attributeString = valueString.substring(nameEndIndex + 1, valueString.lastIndexOf(')'));
+        if (attributeString.trim()) {
+           // Temporarily use a simplified version of attribute parsing for nested
+           nestedAttributes = this.parseAnnotationAttributes(attributeString);
+        }
+      }
+      return { type: 'Annotation', name: name, attributes: nestedAttributes };
     }
     
-    return attributes;
+    // Default: Enum constant (e.g., FetchType.LAZY) or other symbolic constants
+    // We store it as a string.
+    return valueString;
   }
 
   private hasAbstractModifier(modifiers: ClassModifierContext[]): boolean {
@@ -351,23 +446,120 @@ export class JpaEntityVisitor extends AbstractParseTreeVisitor<any> implements J
 
     if (!relationshipAnnotation) return null;
 
-    const joinColumnAnnotation = annotations.find(ann => ann.name === 'JoinColumn');
+    const joinColumnAnnotation = annotations.find(ann => ann.name === 'JoinColumn'); // Standalone @JoinColumn
     const joinTableAnnotation = annotations.find(ann => ann.name === 'JoinTable');
+
+    const relAttributes = relationshipAnnotation.attributes;
+    const mappedBy = relAttributes.mappedBy;
 
     const relationship: EntityRelationship = {
       fieldName: name,
       type: this.mapRelationshipType(relationshipAnnotation.name),
       targetEntity: this.extractTargetEntityFromType(type),
-      fetchType: this.mapFetchType(relationshipAnnotation.attributes.fetch) || FetchType.LAZY,
-      cascadeTypes: this.parseCascadeTypes(relationshipAnnotation.attributes.cascade) || [],
-      optional: relationshipAnnotation.attributes.optional !== 'false',
-      mappedBy: relationshipAnnotation.attributes.mappedBy,
-      joinColumn: joinColumnAnnotation?.attributes?.name,
-      joinTable: joinTableAnnotation?.attributes?.name,
-      isOwningSide: !relationshipAnnotation.attributes.mappedBy
+      fetchType: this.mapFetchType(relAttributes.fetch) || FetchType.LAZY,
+      cascadeTypes: this.parseCascadeTypes(relAttributes.cascade) || [],
+      optional: relAttributes.optional !== false, // Default is true (optional=true)
+      mappedBy: mappedBy,
+      isOwningSide: !mappedBy, // Initial assumption
+      orphanRemoval: relAttributes.orphanRemoval === true, // Ensure it's explicitly true
+
+      // Initialize new fields
+      joinColumns: [],
+      inverseJoinColumns: [],
+      // joinColumnReferencedColumnName will be set below if applicable
     };
 
+    if (relationship.type === RelationshipType.ONE_TO_ONE || relationship.type === RelationshipType.ONE_TO_MANY) {
+      if (typeof relAttributes.orphanRemoval === 'boolean') {
+        relationship.orphanRemoval = relAttributes.orphanRemoval;
+      }
+    }
+    
+    if (joinTableAnnotation) {
+      const jtAttributes = joinTableAnnotation.attributes;
+      relationship.joinTable = jtAttributes.name;
+      relationship.joinTableCatalog = jtAttributes.catalog;
+      relationship.joinTableSchema = jtAttributes.schema;
+
+      // Handle joinColumns in @JoinTable
+      if (jtAttributes.joinColumns) {
+        const jcArray = Array.isArray(jtAttributes.joinColumns) ? jtAttributes.joinColumns : [jtAttributes.joinColumns];
+        for (const jcAnn of jcArray) {
+          const details = this.extractJoinColumnDetails(jcAnn);
+          if (details) relationship.joinColumns!.push(details);
+        }
+      }
+
+      // Handle inverseJoinColumns in @JoinTable
+      if (jtAttributes.inverseJoinColumns) {
+        const ijcArray = Array.isArray(jtAttributes.inverseJoinColumns) ? jtAttributes.inverseJoinColumns : [jtAttributes.inverseJoinColumns];
+        for (const ijcAnn of ijcArray) {
+          const details = this.extractJoinColumnDetails(ijcAnn);
+          if (details) relationship.inverseJoinColumns!.push(details);
+        }
+      }
+      
+      // Handle foreignKey in @JoinTable
+      if (jtAttributes.foreignKey && jtAttributes.foreignKey.type === 'Annotation' && jtAttributes.foreignKey.attributes) {
+        relationship.joinTableForeignKeyName = jtAttributes.foreignKey.attributes.name;
+      }
+
+      // Handle inverseForeignKey in @JoinTable
+      if (jtAttributes.inverseForeignKey && jtAttributes.inverseForeignKey.type === 'Annotation' && jtAttributes.inverseForeignKey.attributes) {
+        relationship.joinTableInverseForeignKeyName = jtAttributes.inverseForeignKey.attributes.name;
+      }
+      // If @JoinTable is present, this side is usually the owning side, unless mappedBy is also present
+      // (which is rare for @JoinTable but theoretically possible for bidirectional @OneToMany with @JoinTable)
+      relationship.isOwningSide = !mappedBy;
+
+
+    } else if (joinColumnAnnotation) { // Standalone @JoinColumn (no @JoinTable)
+      const details = this.extractJoinColumnDetails(joinColumnAnnotation);
+      if (details) {
+        relationship.joinColumns!.push(details);
+        if (details.referencedColumnName) {
+          relationship.joinColumnReferencedColumnName = details.referencedColumnName;
+        }
+      }
+       // isOwningSide is already !mappedBy, which is correct for @JoinColumn scenarios
+    }
+
+    // If mappedBy is present, it's definitely not the owning side.
+    if (mappedBy) {
+        relationship.isOwningSide = false;
+    }
+
     return relationship;
+  }
+
+  private extractJoinColumnDetails(annotationObject: any): JoinColumnDetails | null {
+    if (!annotationObject || annotationObject.type !== 'Annotation' || !annotationObject.attributes) {
+      // If it's a direct attribute set from a single @JoinColumn (not from @JoinTable's array)
+      if (annotationObject && annotationObject.name && annotationObject.attributes === undefined) {
+         // This case might occur if joinColumnAnnotation was not parsed as a nested annotation
+         // but its attributes were directly assigned.
+         // Example: @JoinColumn(name="col_name", referencedColumnName="ref_col")
+         // Here, annotationObject might be the attributes map itself.
+         const name = annotationObject.name;
+         const referencedColumnName = annotationObject.referencedColumnName;
+         if(name) return { name, referencedColumnName };
+      } else if (annotationObject && annotationObject.attributes) { // Standard case for nested annotation
+        const attributes = annotationObject.attributes;
+        const name = attributes.name;
+        const referencedColumnName = attributes.referencedColumnName;
+        if(name) return { name, referencedColumnName };
+      }
+      return null;
+    }
+    // This path is for when annotationObject is { type: "Annotation", name: "JoinColumn", attributes: {...} }
+    const attributes = annotationObject.attributes;
+    const name = attributes.name;
+    const referencedColumnName = attributes.referencedColumnName;
+
+    if (name) {
+      return { name, referencedColumnName };
+    }
+    return null;
   }
 
   private mapRelationshipType(typeName: string): RelationshipType {
@@ -394,17 +586,27 @@ export class JpaEntityVisitor extends AbstractParseTreeVisitor<any> implements J
     return type;
   }
 
-  private parseCascadeTypes(cascadeValue: string): CascadeType[] | undefined {
+  private parseCascadeTypes(cascadeValue: string | string[]): CascadeType[] | undefined {
     if (!cascadeValue) return undefined;
-    
-    // Simplified cascade type parsing
+
+    const values = Array.isArray(cascadeValue) ? cascadeValue : [cascadeValue];
     const types: CascadeType[] = [];
-    if (cascadeValue.includes('ALL')) types.push(CascadeType.ALL);
-    if (cascadeValue.includes('PERSIST')) types.push(CascadeType.PERSIST);
-    if (cascadeValue.includes('MERGE')) types.push(CascadeType.MERGE);
-    if (cascadeValue.includes('REMOVE')) types.push(CascadeType.REMOVE);
-    if (cascadeValue.includes('REFRESH')) types.push(CascadeType.REFRESH);
-    if (cascadeValue.includes('DETACH')) types.push(CascadeType.DETACH);
+
+    for (const val of values) {
+      // Assuming val is something like "CascadeType.ALL" or just "ALL"
+      const typeStr = val.includes('.') ? val.substring(val.lastIndexOf('.') + 1) : val;
+      
+      switch (typeStr.toUpperCase()) {
+        case 'ALL': types.push(CascadeType.ALL); break;
+        case 'PERSIST': types.push(CascadeType.PERSIST); break;
+        case 'MERGE': types.push(CascadeType.MERGE); break;
+        case 'REMOVE': types.push(CascadeType.REMOVE); break;
+        case 'REFRESH': types.push(CascadeType.REFRESH); break;
+        case 'DETACH': types.push(CascadeType.DETACH); break;
+        // JPA also defines REMOVE as an alias for DELETE, and other specific ones,
+        // but these are the main ones from javax.persistence.CascadeType
+      }
+    }
     
     return types.length > 0 ? types : undefined;
   }

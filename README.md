@@ -7,9 +7,9 @@ A TypeScript utility for analyzing Java JPA Entity files using ANTLR4 to extract
 This utility parses Java source files containing JPA entities and extracts comprehensive information about:
 - Entity classes and their metadata
 - Field definitions with column mappings
-- Relationships between entities (OneToOne, OneToMany, ManyToOne, ManyToMany)
-- JPA annotations and their attributes
-- Table and schema information
+- Relationships between entities (OneToOne, OneToMany, ManyToOne, ManyToMany), with detailed join column, join table, and attribute (e.g., `orphanRemoval`, `cascade`, `fetch`) information.
+- JPA annotations and their attributes, with robust parsing for various value types and nested structures.
+- Table and schema information, including for join tables.
 
 The output is a structured JSON format suitable for building interactive visualizations of entity relationships.
 
@@ -145,6 +145,12 @@ interface EntityField {
 
 ### Relationship Structure
 ```typescript
+interface JoinColumnDetails {
+  name: string;                         // Name of the join column
+  referencedColumnName?: string;        // Referenced column name in the target entity
+  // Other attributes like unique, nullable, etc., can be added if parsed
+}
+
 interface EntityRelationship {
   fieldName: string;                    // Field name defining relationship
   type: RelationshipType;               // OneToOne | OneToMany | ManyToOne | ManyToMany
@@ -153,9 +159,21 @@ interface EntityRelationship {
   cascadeTypes: CascadeType[];          // Cascade operations
   optional: boolean;                    // Whether relationship is optional
   mappedBy?: string;                    // Mapped by field (bidirectional)
-  joinColumn?: string;                  // Join column name
-  joinTable?: string;                   // Join table name (ManyToMany)
   isOwningSide: boolean;                // Owning side of relationship
+  orphanRemoval?: boolean;              // For @OneToOne, @OneToMany: if orphanRemoval is true
+  
+  // For relationships using @JoinColumn (typically ToOne or unidirectional OneToMany)
+  joinColumns?: JoinColumnDetails[];    // Array of join column details (usually one)
+  joinColumnReferencedColumnName?: string; // Top-level referencedColumnName from a simple @JoinColumn (convenience)
+
+  // For relationships using @JoinTable (typically ManyToMany or unidirectional OneToMany)
+  joinTable?: string;                   // Join table name
+  joinTableCatalog?: string;            // Catalog for the join table
+  joinTableSchema?: string;             // Schema for the join table
+  // joinColumns array (defined above) is also used for @JoinTable's joinColumns attribute
+  inverseJoinColumns?: JoinColumnDetails[]; // For @JoinTable's inverseJoinColumns attribute
+  joinTableForeignKeyName?: string;     // Name of FK constraint from owning entity to join table
+  joinTableInverseForeignKeyName?: string; // Name of FK constraint from join table to non-owning entity
 }
 ```
 
@@ -267,9 +285,10 @@ The analyzer recognizes and extracts information from the following JPA annotati
 - `@OneToMany` - One-to-many relationships
 - `@ManyToOne` - Many-to-one relationships
 - `@ManyToMany` - Many-to-many relationships
-- `@JoinColumn` - Join column specification
-- `@JoinTable` - Join table specification (for ManyToMany)
+- `@JoinColumn` - Join column specification (attributes like `name`, `referencedColumnName`, `nullable`, etc. are parsed)
+- `@JoinTable` - Join table specification (attributes like `name`, `schema`, `catalog`, `joinColumns`, `inverseJoinColumns`, `foreignKey`, `inverseForeignKey` are parsed, including nested `@JoinColumn` and `@ForeignKey` details)
 - `@Enumerated` - Enum field mapping
+- Relationship-specific attributes like `orphanRemoval`, `fetch`, `cascade`, `optional`, `mappedBy` are parsed.
 
 ## Configuration Options
 

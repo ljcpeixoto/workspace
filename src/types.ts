@@ -74,12 +74,44 @@ export interface EntityRelationship {
   optional: boolean;
   /** Mapped by field name (for bidirectional relationships) */
   mappedBy?: string;
-  /** Join column name */
-  joinColumn?: string;
-  /** Join table name (for ManyToMany) */
+  /** Mapped by field name (for bidirectional relationships) */
+  mappedBy?: string;
+  // joinColumn?: string; // Replaced by joinColumns
+  /** Join table name (for ManyToMany or unidirectional OneToMany) */
   joinTable?: string;
   /** Whether this is the owning side of the relationship */
   isOwningSide: boolean;
+  /** Whether to remove orphaned entities */
+  orphanRemoval?: boolean;
+  /** For simple @JoinColumn, its referencedColumnName */
+  joinColumnReferencedColumnName?: string; 
+  /** Catalog for the join table */
+  joinTableCatalog?: string;
+  /** Schema for the join table */
+  joinTableSchema?: string;
+  /** Name of the foreign key for the owning side's join columns in a JoinTable */
+  joinTableForeignKeyName?: string;
+  /** Name of the foreign key for the non-owning side's inverse join columns in a JoinTable */
+  joinTableInverseForeignKeyName?: string;
+  /** Details of the join column(s) */
+  joinColumns?: JoinColumnDetails[];
+  /** Details of the inverse join column(s) (for @JoinTable) */
+  inverseJoinColumns?: JoinColumnDetails[];
+}
+
+/**
+ * Details of a @JoinColumn annotation
+ */
+export interface JoinColumnDetails {
+  name: string;
+  referencedColumnName?: string;
+  // Potentially add other @JoinColumn attributes here if parsed:
+  // unique?: boolean;
+  // nullable?: boolean;
+  // insertable?: boolean;
+  // updatable?: boolean;
+  // columnDefinition?: string;
+  // table?: string; // For secondary tables, less common here
 }
 
 /**

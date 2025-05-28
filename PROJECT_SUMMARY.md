@@ -39,9 +39,10 @@ This project provides a comprehensive solution for analyzing Java JPA entities a
 
 ✅ **Robust Java Parsing**: Uses ANTLR4 with official Java 20 grammar
 ✅ **Comprehensive Entity Analysis**: Extracts all JPA annotations and metadata
-✅ **Relationship Detection**: Identifies OneToOne, OneToMany, ManyToOne, ManyToMany relationships
-✅ **Field Analysis**: Captures field types, constraints, and column mappings
-✅ **CLI Interface**: Command-line tool with flexible input/output options
+✅ **Relationship Detection**: Identifies OneToOne, OneToMany, ManyToOne, ManyToMany relationships with detailed attribute extraction.
+✅ **Advanced Annotation Parsing**: Robust parsing of JPA annotation attributes, including various literal types, arrays, and nested annotations.
+✅ **Field Analysis**: Captures field types, constraints, and column mappings.
+✅ **CLI Interface**: Command-line tool with flexible input/output options.
 ✅ **JSON Output**: Structured, machine-readable analysis results
 ✅ **Batch Processing**: Analyze multiple files and directories
 ✅ **Error Handling**: Graceful handling of parsing errors and invalid files
@@ -77,12 +78,20 @@ The analyzer can extract the following information from JPA entities:
 - Insertable/updatable flags
 
 ### Relationship Mapping
-- All JPA relationship types (OneToOne, OneToMany, ManyToOne, ManyToMany)
-- Bidirectional relationship detection
-- Join column specifications
-- Cascade configurations
-- Fetch type settings (LAZY/EAGER)
-- mappedBy relationships
+- All JPA relationship types (OneToOne, OneToMany, ManyToOne, ManyToMany).
+- Bidirectional relationship detection (`mappedBy`).
+- Detailed parsing of relationship attributes:
+    - `fetch` (LAZY/EAGER), `cascade` types, `optional`.
+    - `orphanRemoval` for `@OneToOne` and `@OneToMany`.
+- **`@JoinColumn` details:**
+    - `name` and `referencedColumnName`.
+    - Other attributes like `nullable`, `unique`, etc. (if present).
+- **`@JoinTable` details:**
+    - Table `name`, `schema`, and `catalog`.
+    - `joinColumns`: array of objects, each detailing `name` and `referencedColumnName`.
+    - `inverseJoinColumns`: array of objects, similar to `joinColumns`.
+    - Associated foreign key names from nested `@ForeignKey` annotations (e.g., `foreignKey.name`, `inverseForeignKey.name`).
+- Owning side determination.
 
 ### Advanced Features
 - Inheritance mapping (@Inheritance, @DiscriminatorColumn)
@@ -119,8 +128,39 @@ The analyzer can extract the following information from JPA entities:
           "type": "OneToMany",
           "targetEntity": "Order",
           "mappedBy": "user",
-          "cascade": ["ALL"],
-          "fetch": "LAZY"
+          "cascadeTypes": ["ALL"], // Note: field name updated in actual types.ts
+          "fetchType": "LAZY",    // Note: field name updated in actual types.ts
+          "orphanRemoval": true,
+          "isOwningSide": false
+        },
+        {
+          "fieldName": "profile",
+          "type": "OneToOne",
+          "targetEntity": "UserProfile",
+          "isOwningSide": true,
+          "optional": false,
+          "joinColumns": [
+            {
+              "name": "profile_id",
+              "referencedColumnName": "id"
+            }
+          ]
+        },
+        {
+          "fieldName": "roles",
+          "type": "ManyToMany",
+          "targetEntity": "Role",
+          "isOwningSide": true,
+          "joinTable": "user_roles",
+          "joinTableSchema": "security",
+          "joinColumns": [
+            { "name": "user_fk", "referencedColumnName": "id" }
+          ],
+          "inverseJoinColumns": [
+            { "name": "role_fk", "referencedColumnName": "id" }
+          ],
+          "joinTableForeignKeyName": "fk_user_to_roles",
+          "joinTableInverseForeignKeyName": "fk_role_to_users"
         }
       ],
       "annotations": [
