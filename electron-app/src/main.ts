@@ -213,7 +213,8 @@ class JpaEntityViewerApp {
       const args = ['analyze', ...filePaths, '-o', outputFile];
       
       // Run the analyzer
-      const child = spawn('npx', ['ts-node', analyzerPath, ...args], {
+      const tsNodePath = path.join(app.getAppPath(), 'node_modules', 'ts-node', 'dist', 'bin.js');
+      const child = spawn(process.execPath, [tsNodePath, analyzerPath, ...args], {
         cwd: path.join(__dirname, '..'),
         stdio: ['pipe', 'pipe', 'pipe']
       });

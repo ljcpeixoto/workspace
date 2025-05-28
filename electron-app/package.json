@@ -29,7 +29,12 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "electron-store": "^8.1.0"
+    "electron-store": "^8.1.0",
+    "ts-node": "^10.9.2",
+    "commander": "^14.0.0",
+    "fs-extra": "^11.3.0",
+    "glob": "^11.0.2",
+    "antlr4ts": "^0.5.0-alpha.4"
   },
   "build": {
     "appId": "com.openhands.jpa-entity-viewer",
